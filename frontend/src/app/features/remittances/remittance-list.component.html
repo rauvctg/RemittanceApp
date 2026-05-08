@@ -1,0 +1,67 @@
+<div class="list-header">
+  <div>
+    <h1>My remittances</h1>
+    <p class="muted">Track every transfer you send.</p>
+  </div>
+  <button mat-flat-button color="primary" routerLink="/remittances/new">
+    <mat-icon>add</mat-icon>
+    <span>New remittance</span>
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="loading"><mat-spinner diameter="40"></mat-spinner></div>
+} @else if (items().length === 0) {
+  <div class="empty">
+    <mat-icon>inbox</mat-icon>
+    <p>No remittances yet. Click "New remittance" to add your first one.</p>
+  </div>
+} @else {
+  <div class="table-wrap">
+    <table mat-table [dataSource]="items()">
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let r">{{ r.date }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="beneficiary">
+        <th mat-header-cell *matHeaderCellDef>Beneficiary</th>
+        <td mat-cell *matCellDef="let r">{{ r.beneficiaryName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="amount">
+        <th mat-header-cell *matHeaderCellDef class="num">Amount</th>
+        <td mat-cell *matCellDef="let r" class="num">{{ r.amount | number:'1.2-2' }} {{ r.currency }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let r">
+          <mat-chip [color]="statusColor(r.status)" highlighted>{{ r.status }}</mat-chip>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="tracking">
+        <th mat-header-cell *matHeaderCellDef>Tracking code</th>
+        <td mat-cell *matCellDef="let r">
+          <code class="tracking-code">{{ r.trackingCode }}</code>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="actions"></th>
+        <td mat-cell *matCellDef="let r" class="actions">
+          <button mat-icon-button matTooltip="Edit" (click)="edit(r)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button [matTooltip]="canDelete(r) ? 'Delete' : 'Cannot delete a ' + r.status + ' remittance'" color="warn" (click)="remove(r)" [disabled]="!canDelete(r)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+}

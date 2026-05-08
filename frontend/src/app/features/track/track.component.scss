@@ -1,0 +1,89 @@
+.track-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem 1rem;
+  background: #f5f5f5;
+}
+
+.track-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1976d2;
+
+  mat-icon { font-size: 2rem; width: 2rem; height: 2rem; }
+}
+
+.track-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.track-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 0.5rem;
+
+  mat-form-field { width: 100%; }
+  button { align-self: flex-end; }
+}
+
+.track-error {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fce4e4;
+  border-radius: 6px;
+  color: #b71c1c;
+  font-size: 0.9rem;
+}
+
+.track-result {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 1.25rem;
+}
+
+.result-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1976d2;
+  margin-top: 1rem;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e3f0fb;
+}
+
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .label {
+    min-width: 110px;
+    font-size: 0.85rem;
+    color: #757575;
+    font-weight: 500;
+  }
+
+  .value { font-weight: 500; }
+  .code { font-family: monospace; font-size: 1rem; letter-spacing: 0.05em; }
+}
+
+.track-foot {
+  font-size: 0.9rem;
+  color: #757575;
+
+  a { color: #1976d2; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+}

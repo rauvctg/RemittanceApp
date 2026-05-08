@@ -1,0 +1,88 @@
+<div class="track-page">
+  @if (!isAuthenticated()) {
+    <div class="track-brand">
+      <mat-icon>payments</mat-icon>
+      <span>RemittanceManager</span>
+    </div>
+  }
+
+  <mat-card class="track-card">
+    <mat-card-header>
+      <mat-card-title>Track your remittance</mat-card-title>
+      <mat-card-subtitle>Enter the tracking code provided by the sender</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="search()" class="track-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Tracking code</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput formControlName="code" placeholder="e.g. RM-A1B2C3" autocomplete="off" />
+          @if (form.controls.code.hasError('required') && form.controls.code.touched) {
+            <mat-error>Tracking code is required.</mat-error>
+          }
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || loading()">
+          @if (loading()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <span>Check status</span>
+          }
+        </button>
+      </form>
+
+      @if (errorMsg()) {
+        <div class="track-error">{{ errorMsg() }}</div>
+      }
+
+      @if (result(); as r) {
+        <div class="track-result">
+          <div class="result-section-label">Tracking</div>
+          <div class="result-row">
+            <span class="label">Code</span>
+            <span class="value code">{{ r.trackingCode }}</span>
+          </div>
+          <div class="result-row">
+            <span class="label">Status</span>
+            <mat-chip [color]="statusColor(r.status)" highlighted>{{ r.status }}</mat-chip>
+          </div>
+          <div class="result-row">
+            <span class="label">Date</span>
+            <span class="value">{{ r.date }}</span>
+          </div>
+
+          <div class="result-section-label">Sender</div>
+          <div class="result-row">
+            <span class="label">Name</span>
+            <span class="value">{{ r.senderName }}</span>
+          </div>
+          <div class="result-row">
+            <span class="label">ID</span>
+            <span class="value">{{ r.senderIdType }} {{ r.senderIdNumber }}</span>
+          </div>
+
+          <div class="result-section-label">Beneficiary</div>
+          <div class="result-row">
+            <span class="label">Name</span>
+            <span class="value">{{ r.beneficiaryName }}</span>
+          </div>
+          <div class="result-row">
+            <span class="label">ID</span>
+            <span class="value">{{ r.beneficiaryIdType }} {{ r.beneficiaryIdNumber }}</span>
+          </div>
+          <div class="result-row">
+            <span class="label">Amount</span>
+            <span class="value">{{ r.amount | number:'1.2-2' }} {{ r.currency }}</span>
+          </div>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (isAuthenticated()) {
+    <p class="track-foot">
+      <a routerLink="/remittances">Back to remittances</a>
+    </p>
+  }
+</div>

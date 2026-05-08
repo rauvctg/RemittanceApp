@@ -1,0 +1,141 @@
+<div class="form-header">
+  <button mat-icon-button routerLink="/remittances" matTooltip="Back">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  <h1>{{ editingId() ? 'Edit remittance' : 'New remittance' }}</h1>
+</div>
+
+@if (loading()) {
+  <div class="loading"><mat-spinner diameter="36"></mat-spinner></div>
+} @else {
+  <mat-card class="form-card">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="rem-form">
+
+      @if (businessFieldsLocked()) {
+        <div class="locked-banner">
+          <mat-icon>lock</mat-icon>
+          <span>This remittance is <strong>{{ originalStatus() }}</strong>. Only the status can be changed.</span>
+        </div>
+      }
+
+      <p class="section-label">Sender</p>
+      <mat-form-field appearance="outline">
+        <mat-label>Sender name*</mat-label>
+        <input matInput formControlName="senderName" />
+        @if (form.controls.senderName.hasError('required') && form.controls.senderName.touched) {
+          <mat-error>Sender name is required.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="row">
+        <mat-form-field appearance="outline" class="col-1">
+          <mat-label>ID type*</mat-label>
+          <mat-select formControlName="senderIdType">
+            @for (t of idDocTypes; track t) {
+              <mat-option [value]="t">{{ t }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-2">
+          <mat-label>ID number*</mat-label>
+          <input matInput formControlName="senderIdNumber"
+                 [attr.inputmode]="senderIdRule().pattern.source === '^\\d+$' ? 'numeric' : 'text'"
+                 [maxlength]="senderIdRule().maxLength" />
+          <mat-hint>{{ senderIdRule().hint }}</mat-hint>
+          @if (form.controls.senderIdNumber.hasError('required') && form.controls.senderIdNumber.touched) {
+            <mat-error>ID number is required.</mat-error>
+          }
+          @if (form.controls.senderIdNumber.hasError('minlength') && form.controls.senderIdNumber.touched) {
+            <mat-error>Minimum {{ senderIdRule().minLength }} characters.</mat-error>
+          }
+          @if (form.controls.senderIdNumber.hasError('pattern') && form.controls.senderIdNumber.touched) {
+            <mat-error>Invalid format ({{ senderIdRule().hint }}).</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <p class="section-label">Beneficiary</p>
+      <mat-form-field appearance="outline">
+        <mat-label>Beneficiary name*</mat-label>
+        <input matInput formControlName="beneficiaryName" />
+        @if (form.controls.beneficiaryName.hasError('required') && form.controls.beneficiaryName.touched) {
+          <mat-error>Beneficiary name is required.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="row">
+        <mat-form-field appearance="outline" class="col-1">
+          <mat-label>ID type*</mat-label>
+          <mat-select formControlName="beneficiaryIdType">
+            @for (t of idDocTypes; track t) {
+              <mat-option [value]="t">{{ t }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-2">
+          <mat-label>ID number*</mat-label>
+          <input matInput formControlName="beneficiaryIdNumber"
+                 [attr.inputmode]="beneficiaryIdRule().pattern.source === '^\\d+$' ? 'numeric' : 'text'"
+                 [maxlength]="beneficiaryIdRule().maxLength" />
+          <mat-hint>{{ beneficiaryIdRule().hint }}</mat-hint>
+          @if (form.controls.beneficiaryIdNumber.hasError('required') && form.controls.beneficiaryIdNumber.touched) {
+            <mat-error>ID number is required.</mat-error>
+          }
+          @if (form.controls.beneficiaryIdNumber.hasError('minlength') && form.controls.beneficiaryIdNumber.touched) {
+            <mat-error>Minimum {{ beneficiaryIdRule().minLength }} characters.</mat-error>
+          }
+          @if (form.controls.beneficiaryIdNumber.hasError('pattern') && form.controls.beneficiaryIdNumber.touched) {
+            <mat-error>Invalid format ({{ beneficiaryIdRule().hint }}).</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <p class="section-label">Transfer details</p>
+      <div class="row">
+        <mat-form-field appearance="outline" class="col-2">
+          <mat-label>Amount*</mat-label>
+          <input matInput type="number" step="0.01" min="0.01" formControlName="amount"
+                 (focus)="onAmountFocus($event)" (blur)="onAmountBlur($event)" (input)="onAmountInput($event)" />
+          @if (form.controls.amount.hasError('min') && form.controls.amount.touched) {
+            <mat-error>Must be greater than 0.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="col-1">
+          <mat-label>Currency*</mat-label>
+          <mat-select formControlName="currency">
+            @for (c of currencies; track c) {
+              <mat-option [value]="c">{{ c }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="row">
+        @if (editingId()) {
+          <mat-form-field appearance="outline" class="col-1">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              @for (s of availableStatuses(); track s) {
+                <mat-option [value]="s">{{ s }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      </div>
+
+      <div class="actions">
+        <a mat-button routerLink="/remittances">Cancel</a>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+          @if (saving()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <span>{{ editingId() ? 'Save changes' : 'Create' }}</span>
+          }
+        </button>
+      </div>
+    </form>
+  </mat-card>
+}
