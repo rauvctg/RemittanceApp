@@ -19,6 +19,7 @@ Full-stack web app for managing remittances. Following **Clean Architecture** pr
 7. [API surface](#7-api-surface)
 8. [Testing](#8-testing)
 9. [Design decisions](#9-design-decisions)
+10. [Generative AI tools](#10-generative-ai-tools)
 
 ---
 
@@ -287,3 +288,188 @@ A few choices worth highlighting during the code review.
 - **DTOs are classes, not records.** Cleaner Swagger schemas, easier serialization defaults, and no risk of value-equality surprises in tests.
 - **Primary constructors** for backend services keep the wiring single-line where possible.
 - **Functional Angular** — standalone components, signals (`signal`, `computed`), new control flow (`@if`, `@for`), functional interceptor (`HttpInterceptorFn`) and functional guards (`CanActivateFn`).
+
+---
+
+## 10. Generative AI tools
+
+This is the prompt I would use with a GenAI coding assistant such as GitHub Copilot, Cursor, Claude Code, or ChatGPT to validate the technical approach before accepting generated code.
+
+**Tool used:** ChatGPT / Codex  
+**Model used:** GPT-5
+
+### Prompt used
+
+```text
+I need you to detail a technical plan to build an ASP.NET Core Web API for a simple task management system.
+
+Before writing code, explain the proposed architecture and the reasoning behind it. I want the solution to be maintainable and production-oriented, applying SOLID principles, Clean Architecture, separation of concerns, dependency injection, DTOs, repository/service patterns, and secure coding practices.
+
+Use C# with a clear structure for Controller, Service, DTOs, Entity, and Repository layers. Assume a basic User model already exists and authenticated users are identified through JWT claims.
+
+Requirements:
+- CRUD endpoints for tasks.
+- Each task must have title, description, status, due_date, user_id, created_at_utc, and updated_at_utc.
+- A user can only access and modify their own tasks.
+- Use SQL Server persistence. Repository methods must use parameterized queries or EF Core safely.
+- Use DTOs instead of returning entities directly.
+- Add validation for required title, max lengths, valid status values, and due_date.
+- Return proper HTTP status codes: 201, 200, 204, 400, 401, 404.
+- Keep controllers thin and put business logic in services.
+- Include a representative unit test for service validation and ownership behavior.
+
+First provide the implementation plan, including main files/classes, API endpoints, validation rules, authentication/authorization flow, persistence approach, error handling, and test strategy. After the plan, provide a representative implementation sample for the main files and explain any assumptions or trade-offs.
+```
+
+### Representative AI output
+
+After reviewing and approving the plan, this would be a representative sample of the implementation output.
+
+```csharp
+public enum TaskStatus
+{
+    Pending = 0,
+    InProgress = 1,
+    Completed = 2,
+    Cancelled = 3
+}
+
+public sealed class TaskItem
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public TaskStatus Status { get; set; }
+    public DateOnly? DueDate { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? UpdatedAtUtc { get; set; }
+}
+
+public sealed class CreateTaskRequest
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public DateOnly? DueDate { get; set; }
+}
+
+public sealed class UpdateTaskRequest
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public TaskStatus Status { get; set; }
+    public DateOnly? DueDate { get; set; }
+}
+```
+
+```csharp
+[ApiController]
+[Authorize]
+[Route("api/tasks")]
+public sealed class TasksController(ITaskService service, ICurrentUserService currentUser) : ControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<TaskDto>>> List(CancellationToken ct)
+    {
+        var tasks = await service.ListAsync(currentUser.UserId, ct);
+        return Ok(tasks);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<TaskDto>> GetById(Guid id, CancellationToken ct)
+    {
+        var task = await service.GetByIdAsync(currentUser.UserId, id, ct);
+        return task is null ? NotFound() : Ok(task);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<TaskDto>> Create(CreateTaskRequest request, CancellationToken ct)
+    {
+        var created = await service.CreateAsync(currentUser.UserId, request, ct);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<TaskDto>> Update(Guid id, UpdateTaskRequest request, CancellationToken ct)
+    {
+        var updated = await service.UpdateAsync(currentUser.UserId, id, request, ct);
+        return updated is null ? NotFound() : Ok(updated);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        var deleted = await service.DeleteAsync(currentUser.UserId, id, ct);
+        return deleted ? NoContent() : NotFound();
+    }
+}
+```
+
+```csharp
+public sealed class TaskService(ITaskRepository repository, IClock clock) : ITaskService
+{
+    public async Task<TaskDto> CreateAsync(Guid userId, CreateTaskRequest request, CancellationToken ct)
+    {
+        ValidateTaskInput(request.Title, request.DueDate);
+
+        var entity = new TaskItem
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Title = request.Title.Trim(),
+            Description = request.Description?.Trim(),
+            Status = TaskStatus.Pending,
+            DueDate = request.DueDate,
+            CreatedAtUtc = clock.UtcNow
+        };
+
+        await repository.AddAsync(entity, ct);
+        return ToDto(entity);
+    }
+
+    private static void ValidateTaskInput(string title, DateOnly? dueDate)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ValidationException("Title is required.");
+
+        if (title.Length > 150)
+            throw new ValidationException("Title cannot exceed 150 characters.");
+
+        if (dueDate is not null && dueDate < DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            throw new ValidationException("Due date cannot be in the past.");
+    }
+}
+```
+
+### Validation and improvements
+
+I would not accept the AI output as final code without review. My validation process would include:
+
+- Review the generated endpoints against REST conventions and confirm the expected status codes.
+- Confirm that every read/update/delete operation filters by `UserId`, so one user cannot access another user's tasks.
+- Check that the controller does not trust `user_id` from the request body; the user must come from JWT claims.
+- Verify validation rules for `title`, `status`, and `due_date`.
+- Review data access for SQL injection risks. If ADO.NET is used, every query must use parameters. If EF Core is used, avoid unsafe raw SQL.
+- Add or adjust unit tests for create, update, delete, not-found, invalid input, and ownership scenarios.
+- Run the API through Swagger or Postman and test authenticated and unauthenticated requests.
+
+### Corrections, edge cases, authentication and validations
+
+Typical corrections I would make to AI-generated code:
+
+- Move business logic out of controllers if the generated scaffold places too much logic there.
+- Replace free-text status values with an enum to avoid invalid states.
+- Return DTOs instead of database entities.
+- Add ownership checks in repository/service methods.
+- Normalize input values by trimming title and description.
+- Add consistent error handling so validation errors return `400` and missing or foreign-user resources return `404`.
+- Consider soft delete if the business needs auditability.
+- Add rate limiting, structured logging, HTTPS-only configuration, and safe error responses for production environments.
+
+For edge cases, authentication and validations, I would specifically verify:
+
+- `401 Unauthorized` when the JWT is missing, expired, or invalid.
+- `404 Not Found` when a task does not exist or belongs to another user.
+- `400 Bad Request` when `title` is empty, too long, or `status` is outside the allowed enum values.
+- Due date handling for null values, past dates, and date-only serialization.
+- Ownership enforcement on every `GET`, `PUT`, and `DELETE`, using the authenticated user id from claims instead of trusting client-provided values.
