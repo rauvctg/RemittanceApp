@@ -1,0 +1,23 @@
+{
+  "name": "remittancemanager",
+  "version": "1.0.0",
+  "description": "Full-stack application for managing remittances. Built with ASP.NET Core 9 Web API, SQL Server with ADO.NET (no ORM), JWT auth, and an Angular frontend. Developed following Clean Architecture principles and TDD methodology.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}
